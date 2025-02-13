@@ -1,5 +1,8 @@
 # Buildroot Gameboy Advance Emulator Console
 
+## Team Member
+Moshiur (Mosh333) - Project will be completed individually
+
 ## Overview
 See the [project wiki](https://github.com/cu-ecen-aeld/final-project-Mosh333/wiki/Project-Overview) for more details.
 
