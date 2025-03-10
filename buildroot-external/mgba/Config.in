@@ -1,0 +1,8 @@
+config BR2_PACKAGE_MGBA
+    bool "mGBA Emulator"
+    depends on BR2_PACKAGE_SDL2
+    depends on BR2_PACKAGE_LIBPNG
+    help
+      mGBA is an open-source Game Boy Advance emulator.
+
+      https://mgba.io

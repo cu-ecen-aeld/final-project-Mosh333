@@ -1,0 +1,58 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          resizefs
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Resize root filesystem on first boot
+### END INIT INFO
+
+FLAG_FILE1="/etc/.resize_phase1_done"
+
+# Hardcoded root partition for Raspberry Pi 3B+
+PARTITION="/dev/mmcblk0p2"
+DEVICE="/dev/mmcblk0"
+
+if [ -f "$FLAG_FILE1" ]; then
+    echo "Root filesystem already resized. Skipping..."
+    exit 0
+fi
+
+if [ ! -f "$FLAG_FILE1" ]; then
+    echo "Resizing root partition and filesystem..."
+
+
+
+    if [ ! -e "$PARTITION" ]; then
+        echo "ERROR: Expected root partition $PARTITION not found!"
+        exit 1
+    fi
+
+    # Find the start sector of the root partition
+    START_SECTOR=$(fdisk -l "$DEVICE" | grep "$PARTITION" | awk '{print $4}')
+
+    echo "Expanding partition on $DEVICE ($PARTITION)..."
+    echo "Start sector: $START_SECTOR"
+
+    # Resize the partition
+    echo -e "d\n2\nn\np\n2\n$START_SECTOR\n\nw" | fdisk "$DEVICE" > /tmp/fdisk_debug.log 2>&1
+#     fdisk "$DEVICE" <<EOF
+# d
+# 2
+# n
+# p
+# 2
+# $START_SECTOR
+# +100G
+# w
+# EOF
+
+    echo "Resize complete. Reboot required."
+    touch "$FLAG_FILE1"
+    sync
+    reboot
+fi
+
+

@@ -1,0 +1,14 @@
+#!/bin/sh
+echo "Checking if root filesystem needs resizing..."
+
+# Get root filesystem size
+ROOT_SIZE=$(df -h | grep "/dev/root" | awk '{print $2}')
+
+# Check if root size contains "G" (gigabytes)
+if echo "$ROOT_SIZE" | grep -q "G"; then
+    echo "Root filesystem is already expanded: $ROOT_SIZE"
+else
+    echo "Root filesystem is too small ($ROOT_SIZE). Expanding..."
+    resize2fs /dev/mmcblk0p2
+    echo "Filesystem resize complete."
+fi
