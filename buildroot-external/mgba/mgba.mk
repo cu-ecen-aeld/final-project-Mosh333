@@ -36,7 +36,8 @@ define MGBA_CONFIGURE_CMDS
         -DBUILD_QT=ON \
         -DUSE_EPOXY=ON \
         -DUSE_DISCORD_RPC=OFF \
-        -DUSE_LUA=ON \
+        -DENABLE_SCRIPTING=ON \
+        -DUSE_LUA=5.4 \
         -DLUA_LIBRARY="$(STAGING_DIR)/usr/lib/liblua.so" \
         -DLUA_INCLUDE_DIR="$(STAGING_DIR)/usr/include" \
         -DLIBELF_INCLUDE_DIR="$(STAGING_DIR)/usr/include" \
