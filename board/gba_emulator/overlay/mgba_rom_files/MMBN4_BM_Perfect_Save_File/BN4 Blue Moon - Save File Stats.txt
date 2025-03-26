@@ -1,0 +1,116 @@
+------------------
+Title Screen Marks 
+------------------
+-Blue Moon (Game Complete)
+-Soul Complete
+-Standard Complete
+-Mega Complete
+-Giga Complete
+-PA Complete
+-Bass
+
+--------------
+Rockman Zero 3
+--------------
+-Linked to acquire Z Saber Mega Class Chip
+
+-------
+Library
+-------
+S150/M60/G5/S56/PA30
+
+--------
+Upgrades
+--------
+All HP Memories 
+All Regular Ups
+All Navi Customizer Programs
+All Spin Colors
+All Lotto Numbers used
+
+---------------
+Navi Customizer
+---------------
+BusterPack
+BugStopper
+Attack+1
+Rapid+1
+Charge+1
+HP+300
+HP+500
+
+-----------
+Playthrough
+-----------
+-4
+-Uses the least number of Playthroughs required to obtain everything the game has to offer
+
+--------------
+VS. Other Ver.
+--------------
+-+100 for Both Versions
+-Maxed out BlueMoon
+
+------------
+Soul Entries
+------------
+-All opposite version Soul Navis
+-Opposite Version Soul Navis have been fought once each on Playthroughs 2&3
+-Soul Entries @ 1000 HP, with Navi Customizer HP+s and Kaizou off, using only HP Memory Upgrades with transfer
+
+----------
+Boss Navis
+----------
+-Random Encounters for Boss Navis in every area, including opposite Soul Navis
+-Bass Ω Defeated (BassXX defeated only on e-Reader save)
+-Time Records for all 20 Boss Navis that can record Records
+--Roll        - 0:01:61
+--GutsMan     - 0:01:61
+--WindMan     - 0:01:61
+--SearchMan   - 0:01:61
+--FireMan     - 0:01:61
+--ThunderMan  - 0:01:61
+
+--ProtoMan    - 0:01:61
+--NumberMan   - 0:01:61
+--MetalMan    - 0:01:61
+--JunkMan     - 0:01:61
+--AquaMan     - 0:01:61
+--WoodMan     - 0:01:61
+
+--TopMan      - 0:01:61
+--ShadeMan    - 0:01:61
+--BurnerMan   - 0:01:61
+--ColdMan     - 0:01:61
+--SparkMan    - 0:01:61
+--LaserMan    - 0:01:61
+--KendoMan    - 0:01:61
+--VideoMan    - 0:01:61
+
+--Bass        - 0:01:61
+
+------------------------------
+Mod Cards (e-Reader save only)
+------------------------------
+0A 096 (Max HP +850)
+0B 061 (Max HP +550)
+0C 045 (Default Full Synchro)
+0D 072 (B+ Back = Lance)
+0E 024 (Charge Shot = Bubbler)
+0F 088 (PET Screen Color: Black)
+
+---------------------------------------------------------
+Special Chip Transmission Cards used (e-Reader save only)
+---------------------------------------------------------
+PrixPowr G
+Duo D
+
+--------
+Location
+--------
+MeteorComp4 (before Duo Ω)
+
+----
+Time
+----
+58:38

@@ -38,6 +38,8 @@ if [ ! -f "$FLAG_FILE1" ]; then
 
     # Resize the partition
     echo -e "d\n2\nn\np\n2\n$START_SECTOR\n\nw" | fdisk "$DEVICE" > /tmp/fdisk_debug.log 2>&1
+    
+    cp -r /mgba_rom_files/ /root/
 #     fdisk "$DEVICE" <<EOF
 # d
 # 2
