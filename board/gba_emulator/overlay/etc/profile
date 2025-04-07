@@ -12,3 +12,11 @@ else
     resize2fs /dev/mmcblk0p2
     echo "Filesystem resize complete."
 fi
+
+# Only run on HDMI console
+echo "[mgba-profile] Starting mGBA..."
+
+export DISPLAY=:0
+export QT_QPA_PLATFORM=xcb
+
+/usr/bin/mgba-qt -b /root/gba_bios.bin /root/mgba_rom_files/Megaman_Battle_Network_4_Blue_Moon_USA/megaman_bn4.gba
