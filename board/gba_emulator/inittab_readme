@@ -1,3 +1,5 @@
+# Ensure your final /output/target/etc/inittab (via manual edit)
+# contains tty1::respawn:-/bin/sh and not tty1::respawn:/sbin/getty -L  tty1 0 vt100 # HDMI console
 # /etc/inittab
 #
 # Copyright (C) 2001 Erik Andersen <andersen@codepoet.org>
