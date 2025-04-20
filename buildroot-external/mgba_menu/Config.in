@@ -1,0 +1,6 @@
+config BR2_PACKAGE_MGBA_MENU
+    bool "mgba_menu"
+    depends on BR2_PACKAGE_QT5BASE
+    depends on BR2_PACKAGE_QT5BASE_WIDGETS
+    help
+      SDL2-based menu to select and launch GBA ROMs via mGBA.

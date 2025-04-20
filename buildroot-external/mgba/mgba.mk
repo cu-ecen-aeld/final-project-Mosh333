@@ -19,6 +19,12 @@ MGBA_DEPENDENCIES = sdl2 libpng zlib elfutils qt5base sqlite libedit libzip ffmp
 #-DBUILD_HEADLESS=ON
 #-DUSE_EDITLINE=ON
 #-DUSE_READLINE=ON
+# Ensure the following libraries are not on host system when compiling:
+# sudo apt install libsdl2-dev build-essential
+# sudo apt remove --purge libsdl2-dev build-essential; 
+# sudo apt autoremove --purge; 
+# dpkg -l | grep libsdl2-dev; dpkg -l | grep build-essential; 
+
 define MGBA_CONFIGURE_CMDS
     cmake -S $(@D) -B $(@D)/build \
         -DCMAKE_INSTALL_PREFIX=/usr \

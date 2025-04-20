@@ -1,3 +1,4 @@
 menu "mGBA packages"
     source "../buildroot-external/mgba/Config.in"
+    source "../buildroot-external/mgba_menu/Config.in"
 endmenu
