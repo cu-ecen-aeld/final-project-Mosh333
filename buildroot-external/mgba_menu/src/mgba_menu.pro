@@ -5,5 +5,6 @@ QT       += widgets
 CONFIG   += c++17
 TARGET    = mgba_menu
 TEMPLATE  = app
+LIBS += -lSDL2
 
 SOURCES  += main.cpp

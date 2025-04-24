@@ -32,7 +32,7 @@ while true; do
         # Only launch mgba_menu if it's not already running
         if ! ps | grep -q '[m]gba_menu'; then
             echo "[Watchdog] Launching mgba_menu..."
-            /usr/bin/mgba_menu
+            /usr/bin/mgba_menu >> /tmp/mgba_menu.log 2>&1
             echo "[Watchdog] mgba_menu exited. Restarting after short delay..."
             sleep 1
         else
