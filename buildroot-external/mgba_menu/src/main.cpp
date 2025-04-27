@@ -1,3 +1,5 @@
+// Your latest working base + fixes applied directly without refactor
+
 #include <QApplication>
 #include <QWidget>
 #include <QLabel>
@@ -7,8 +9,6 @@
 #include <QStackedWidget>
 #include <QFile>
 #include <QDebug>
-#include <vector>
-#include <QHash>
 #include <QTimer>
 #include <QSocketNotifier>
 #include <fcntl.h>
@@ -28,23 +28,15 @@ class MenuWindow : public QWidget
 public:
     MenuWindow()
     {
-        qDebug() << "[init] Constructing MenuWindow...";
         setWindowTitle("GBA UI Menu");
         setFixedSize(1920, 1080);
 
-        // Wake controller via SDL2
-        qDebug() << "[sdl2-wake] Initializing SDL2...";
         if (SDL_Init(SDL_INIT_GAMECONTROLLER) == 0) {
             if (SDL_NumJoysticks() > 0 && SDL_IsGameController(0)) {
                 SDL_GameController *gc = SDL_GameControllerOpen(0);
-                if (gc) {
-                    qDebug() << "[sdl2-wake] Controller opened and closed to wake it.";
-                    SDL_GameControllerClose(gc);
-                }
+                if (gc) SDL_GameControllerClose(gc);
             }
             SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
-        } else {
-            qWarning() << "[sdl2-wake] SDL_Init failed:" << SDL_GetError();
         }
 
         stack_ = new QStackedWidget(this);
@@ -55,10 +47,7 @@ public:
         outer->setContentsMargins(0, 0, 0, 0);
         outer->addWidget(stack_);
 
-        QTimer::singleShot(100, this, [this]() {
-            qDebug() << "[fix] Running delayed focus update (activateWindow forced)";
-            updateFocus();
-        });
+        QTimer::singleShot(100, this, [this]() { updateFocus(); });
 
         openEvdevGamepad();
     }
@@ -69,26 +58,24 @@ public:
     }
 
 private:
+    enum MenuMode { MainMenu, SubMenu } mode_ = MainMenu;
+
     void openEvdevGamepad()
     {
         for (int i = 0; i < 32; ++i) {
             QString path = QString("/dev/input/event%1").arg(i);
             int fd = open(path.toStdString().c_str(), O_RDONLY | O_NONBLOCK);
             if (fd < 0) continue;
-
             char name[256] = "";
             ioctl(fd, EVIOCGNAME(sizeof(name)), name);
-
             if (QString(name).contains("8BitDo", Qt::CaseInsensitive)) {
                 gamepadFd_ = fd;
                 notifier_ = new QSocketNotifier(gamepadFd_, QSocketNotifier::Read, this);
                 connect(notifier_, &QSocketNotifier::activated, this, &MenuWindow::handleInputEvent);
-                qDebug() << "[evdev] Listening on" << path;
                 return;
             }
             ::close(fd);
         }
-        qWarning() << "[evdev] No gamepad found.";
     }
 
     void handleInputEvent()
@@ -96,46 +83,88 @@ private:
         struct input_event ev;
         while (read(gamepadFd_, &ev, sizeof(ev)) > 0) {
             if (ev.type == EV_KEY && ev.value == 1) {
-                switch (ev.code) {
-                case 304: case 28: case 57:
-                    buttons_[currentRow_ * cols_ + currentCol_]->click();
-                    break;
-                case 305:
-                    break;
-                case 315:
-                    QApplication::quit();
-                    break;
-                case 14:
-                    stack_->setCurrentIndex(0);
-                    break;
-                case 103:
-                    currentRow_ = (currentRow_ - 1 + rows_) % rows_;
-                    updateFocus();
-                    break;
-                case 108:
-                    currentRow_ = (currentRow_ + 1) % rows_;
-                    updateFocus();
-                    break;
-                case 105:
-                    currentCol_ = (currentCol_ - 1 + cols_) % cols_;
-                    updateFocus();
-                    break;
-                case 106:
-                    currentCol_ = (currentCol_ + 1) % cols_;
-                    updateFocus();
-                    break;
-                }
+                if (mode_ == MainMenu) handleMainInput(ev.code);
+                else handleSubInput(ev.code);
             } else if (ev.type == EV_ABS) {
-                if (ev.code == 16) {
-                    if (ev.value == -1) currentCol_ = (currentCol_ - 1 + cols_) % cols_;
-                    else if (ev.value == 1) currentCol_ = (currentCol_ + 1) % cols_;
-                    updateFocus();
-                } else if (ev.code == 17) {
-                    if (ev.value == -1) currentRow_ = (currentRow_ - 1 + rows_) % rows_;
-                    else if (ev.value == 1) currentRow_ = (currentRow_ + 1) % rows_;
-                    updateFocus();
-                }
+                if (mode_ == MainMenu) handleMainAxis(ev.code, ev.value);
+                else handleSubAxis(ev.code, ev.value);
             }
+        }
+    }
+
+    void handleMainInput(int code)
+    {
+        switch (code) {
+        case 304: case 28: case 57:
+            buttons_[currentRow_ * cols_ + currentCol_]->click();
+            break;
+        case 315:
+            QApplication::quit();
+            break;
+        case 103:
+            currentRow_ = (currentRow_ - 1 + rows_) % rows_;
+            updateFocus();
+            break;
+        case 108:
+            currentRow_ = (currentRow_ + 1) % rows_;
+            updateFocus();
+            break;
+        case 105:
+            currentCol_ = (currentCol_ - 1 + cols_) % cols_;
+            updateFocus();
+            break;
+        case 106:
+            currentCol_ = (currentCol_ + 1) % cols_;
+            updateFocus();
+            break;
+        }
+    }
+
+    void handleMainAxis(int code, int value)
+    {
+        if (code == 16) {
+            if (value == -1) currentCol_ = (currentCol_ - 1 + cols_) % cols_;
+            else if (value == 1) currentCol_ = (currentCol_ + 1) % cols_;
+            updateFocus();
+        } else if (code == 17) {
+            if (value == -1) currentRow_ = (currentRow_ - 1 + rows_) % rows_;
+            else if (value == 1) currentRow_ = (currentRow_ + 1) % rows_;
+            updateFocus();
+        }
+    }
+
+    void handleSubInput(int code)
+    {
+        if (code == 14 || code == 305) {
+            stack_->setCurrentIndex(0);
+            mode_ = MainMenu;
+            currentRow_ = 0;
+            currentCol_ = 0;
+            updateFocus();
+            return;
+        }
+
+        if (code == 304 || code == 28 || code == 57) {
+            if (!subButtons_.isEmpty())
+                subButtons_[subFocusIndex_]->click();
+        }
+
+        if (code == 103) {
+            subFocusIndex_ = (subFocusIndex_ - 1 + subButtons_.size()) % subButtons_.size();
+            updateSubFocus();
+        }
+        else if (code == 108) {
+            subFocusIndex_ = (subFocusIndex_ + 1) % subButtons_.size();
+            updateSubFocus();
+        }
+    }
+
+    void handleSubAxis(int code, int value)
+    {
+        if (code == 17) {
+            if (value == -1) subFocusIndex_ = (subFocusIndex_ - 1 + subButtons_.size()) % subButtons_.size();
+            else if (value == 1) subFocusIndex_ = (subFocusIndex_ + 1) % subButtons_.size();
+            updateSubFocus();
         }
     }
 
@@ -143,13 +172,21 @@ private:
     {
         activateWindow();
         for (int i = 0; i < buttons_.size(); ++i) {
-            auto *btn = buttons_[i];
-            if (i == currentRow_ * cols_ + currentCol_) {
-                btn->setFocus(Qt::OtherFocusReason);
-                btn->update();
-            } else {
-                btn->clearFocus();
-            }
+            if (i == currentRow_ * cols_ + currentCol_)
+                buttons_[i]->setFocus(Qt::OtherFocusReason);
+            else
+                buttons_[i]->clearFocus();
+        }
+        qApp->processEvents();
+    }
+
+    void updateSubFocus()
+    {
+        for (int i = 0; i < subButtons_.size(); ++i) {
+            if (i == subFocusIndex_)
+                subButtons_[i]->setFocus(Qt::OtherFocusReason);
+            else
+                subButtons_[i]->clearFocus();
         }
         qApp->processEvents();
     }
@@ -166,9 +203,7 @@ private:
         grid->setSpacing(10);
         grid->setContentsMargins(0, 0, 0, 0);
 
-        QStringList names = { "Play", "Options", "About",
-                              "Save", "Load", "Scores",
-                              "Credits", "Help", "Quit" };
+        QStringList names = { "Play", "Options", "About", "Download", "File Explorer", "System", "Settings", "Background", "Quit" };
 
         for (int i = 0; i < rows_ * cols_; ++i)
         {
@@ -192,36 +227,119 @@ private:
 
     QWidget* pageFor(const QString &titleText)
     {
-        if (pages_.contains(titleText)) return pages_[titleText];
+        subButtons_.clear();
+
+        if (pages_.contains(titleText)) {
+            QWidget *oldPage = pages_.take(titleText);
+            stack_->removeWidget(oldPage);
+            oldPage->deleteLater();
+        }
 
         auto *page = new QWidget;
-        auto *back = new QPushButton("Back to Main Menu");
-        back->setFixedSize(600, 200);
-        back->setStyleSheet(defaultBtnStyle);
-        connect(back, &QPushButton::clicked, this, [this]{ stack_->setCurrentIndex(0); });
+        auto *layout = new QVBoxLayout(page);
+        layout->setContentsMargins(50, 50, 50, 50);
+        layout->setSpacing(30);
 
-        auto *title = new QLabel(titleText);
-        title->setAlignment(Qt::AlignHCenter);
-        title->setStyleSheet("font-size:60px;font-weight:bold;");
+        auto *topTitle = new QLabel(titleText);
+        topTitle->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
+        topTitle->setStyleSheet("font-size:48px;font-weight:bold;");
+        layout->addWidget(topTitle);
 
-        auto *lay = new QVBoxLayout(page);
-        lay->addStretch();
-        lay->addWidget(title, 0, Qt::AlignHCenter);
-        lay->addSpacing(80);
-        lay->addWidget(back, 0, Qt::AlignHCenter);
-        lay->addStretch();
+        auto *fakeBtn = new QPushButton(titleText);
+        fakeBtn->setFixedSize(1000, 150);
+        fakeBtn->setStyleSheet(defaultBtnStyle);
+        fakeBtn->setFocusPolicy(Qt::StrongFocus);
+
+        // Customized dummy handler
+        connect(fakeBtn, &QPushButton::clicked, this, [this, titleText] {
+            if (titleText == "Play") {
+                qDebug() << "[action] Play button clicked!";
+                // TODO: Launch Play menu
+            }
+            else if (titleText == "Options") {
+                qDebug() << "[action] Options button clicked!";
+                // TODO: Open Options menu
+            }
+            else if (titleText == "About") {
+                qDebug() << "[action] About button clicked!";
+                // TODO: Show About information
+            }
+            else if (titleText == "Download") {
+                qDebug() << "[action] Download button clicked!";
+                // TODO: Launch Download Manager
+            }
+            else if (titleText == "File Explorer") {
+                qDebug() << "[action] File Explorer button clicked!";
+                // TODO: Open File Explorer
+            }
+            else if (titleText == "System") {
+                qDebug() << "[action] System button clicked!";
+                // TODO: Show System Settings
+            }
+            else if (titleText == "Settings") {
+                qDebug() << "[action] Settings button clicked!";
+                // TODO: Open General Settings
+            }
+            else if (titleText == "Background") {
+                qDebug() << "[action] Background button clicked!";
+                // TODO: Set or Change Background
+            }
+            else if (titleText == "Quit") {
+                qDebug() << "[action] Quit button clicked!";
+                // TODO: Maybe confirm quitting?
+            }
+            else {
+                qDebug() << "[dummy] Unknown button clicked:" << titleText;
+            }
+        });
+
+        auto *backBtn = new QPushButton("Back to Main Menu");
+        backBtn->setFixedSize(1000, 150);
+        backBtn->setStyleSheet(defaultBtnStyle);
+        backBtn->setFocusPolicy(Qt::StrongFocus);
+        connect(backBtn, &QPushButton::clicked, this, [this]{
+            stack_->setCurrentIndex(0);
+            mode_ = MainMenu;
+            currentRow_ = 0;
+            currentCol_ = 0;
+            updateFocus();
+        });
+
+        layout->addWidget(fakeBtn, 0, Qt::AlignHCenter);
+        layout->addWidget(backBtn, 0, Qt::AlignHCenter);
+        layout->addStretch();
+
+        subButtons_.append(fakeBtn);
+        subButtons_.append(backBtn);
 
         pages_.insert(titleText, page);
         stack_->addWidget(page);
+
+        // --- REAL fix starts here ---
+        stack_->setCurrentWidget(page);   // <--- ADD this line
+        subFocusIndex_ = 0;
+        mode_ = SubMenu;
+        updateSubFocus();
+        activateWindow();
+        qApp->processEvents();
+        // --- REAL fix ends here ---
+
         return page;
     }
 
     void onMainButton(int idx)
     {
-        switch (idx) {
+        switch (idx)
+        {
         case 0: handlePlay(); break;
         case 1: stack_->setCurrentWidget(pageFor("Options")); break;
-        default: stack_->setCurrentWidget(pageFor(QString("Page %1").arg(idx))); break;
+        case 2: stack_->setCurrentWidget(pageFor("About")); break;
+        case 3: stack_->setCurrentWidget(pageFor("Download")); break;
+        case 4: stack_->setCurrentWidget(pageFor("File Explorer")); break;
+        case 5: stack_->setCurrentWidget(pageFor("System")); break;
+        case 6: stack_->setCurrentWidget(pageFor("Settings")); break;
+        case 7: stack_->setCurrentWidget(pageFor("Background")); break;
+        case 8: stack_->setCurrentWidget(pageFor("Quit")); break;
         }
     }
 
@@ -236,9 +354,11 @@ private:
     }
 
     QStackedWidget *stack_ = nullptr;
-    QHash<QString, QWidget*> pages_;
     QVector<QPushButton*> buttons_;
+    QVector<QPushButton*> subButtons_;
+    QHash<QString, QWidget*> pages_;
     int currentRow_ = 0, currentCol_ = 0;
+    int subFocusIndex_ = 0;
     const int rows_ = 3, cols_ = 3;
     int gamepadFd_ = -1;
     QSocketNotifier *notifier_ = nullptr;
