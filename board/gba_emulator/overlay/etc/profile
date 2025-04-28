@@ -17,9 +17,20 @@ fi
 #echo "[mgba-profile] Starting mGBA..."
 
 export DISPLAY=:0
-export QT_QPA_PLATFORM=xcb
-
+export QT_QPA_PLATFORM=xcb  #smaller window
+# export QT_QPA_PLATFORM=linuxfb #main.cpp, handlePlay() logic determines which backend is supported
+                                #linuxfb is for full window
 #/usr/bin/mgba-qt -b /root/gba_bios.bin /root/mgba_rom_files/Megaman_Battle_Network_4_Blue_Moon_USA/megaman_bn4.gba
+
+#there could be startup issues on first boot, wait for fb0 to start
+# sleep 5
+for i in $(seq 1 20); do
+    if [ -e /dev/fb0 ]; then
+        echo "[Startup] /dev/fb0 found!"
+        break
+    fi
+    sleep 0.5
+done
 
 echo "[Startup] Ensuring mgba_menu is always running..."
 

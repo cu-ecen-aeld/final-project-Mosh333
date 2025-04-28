@@ -10,6 +10,9 @@
 #include <QFile>
 #include <QDebug>
 #include <QTimer>
+#include <QDir>
+#include <QFileInfo>
+#include <QScrollArea>
 #include <QSocketNotifier>
 #include <fcntl.h>
 #include <linux/input.h>
@@ -59,6 +62,8 @@ public:
 
 private:
     enum MenuMode { MainMenu, SubMenu } mode_ = MainMenu;
+    QScrollArea *romScrollArea_ = nullptr;
+    QWidget *romScrollWidget_ = nullptr;
 
     void openEvdevGamepad()
     {
@@ -183,13 +188,21 @@ private:
     void updateSubFocus()
     {
         for (int i = 0; i < subButtons_.size(); ++i) {
-            if (i == subFocusIndex_)
+            if (i == subFocusIndex_) {
                 subButtons_[i]->setFocus(Qt::OtherFocusReason);
-            else
+
+                // --- NEW: Ensure button is visible inside scroll area ---
+                if (romScrollArea_) {
+                    romScrollArea_->ensureWidgetVisible(subButtons_[i]);
+                }
+            }
+            else {
                 subButtons_[i]->clearFocus();
+            }
         }
         qApp->processEvents();
     }
+
 
     QWidget* buildMainGrid()
     {
@@ -346,12 +359,122 @@ private:
     void handlePlay()
     {
         if (isRaspberryPi()) {
-            ::execl("/usr/bin/mgba-qt", "mgba-qt", "-b", "/root/gba_bios.bin", "/root/mgba_rom_files/Megaman_Battle_Network_4_Blue_Moon_USA/megaman_bn4.gba", static_cast<char*>(nullptr));
+            // ::execl("/usr/bin/mgba-qt", "mgba-qt", "-b", "/root/gba_bios.bin", "/root/mgba_rom_files/Megaman_Battle_Network_4_Blue_Moon_USA/megaman_bn4.gba", static_cast<char*>(nullptr));
+            // QApplication::exit(1);
+            showRomSelector();
+        } else {
+            QApplication::quit();
+        }
+    }
+
+    void showRomSelector()
+    {
+        subButtons_.clear();
+
+        if (pages_.contains("Play")) {
+            QWidget *oldPage = pages_.take("Play");
+            stack_->removeWidget(oldPage);
+            oldPage->deleteLater();
+            romScrollArea_ = nullptr;
+            romScrollWidget_ = nullptr;
+        }
+
+        auto *page = new QWidget;
+        auto *layout = new QVBoxLayout(page);
+        layout->setContentsMargins(50, 50, 50, 50);
+        layout->setSpacing(20);
+
+        auto *title = new QLabel("Select a Game");
+        title->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
+        title->setStyleSheet("font-size:48px;font-weight:bold;");
+        layout->addWidget(title);
+
+        // --- NEW: Scroll area for ROM buttons ---
+        romScrollArea_ = new QScrollArea;
+        romScrollArea_->setWidgetResizable(true);
+        romScrollArea_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        romScrollArea_->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+
+        romScrollWidget_ = new QWidget;
+        auto *romLayout = new QVBoxLayout(romScrollWidget_);
+        romLayout->setContentsMargins(0, 0, 0, 0);
+        romLayout->setSpacing(10);
+
+        QStringList romPaths = findRomFiles();
+
+        for (const QString &romPath : romPaths) {
+            QString displayName = QFileInfo(romPath).completeBaseName().replace("_", " "); // prettier name
+            auto *btn = new QPushButton(displayName);
+            btn->setFixedSize(1000, 100);
+            btn->setStyleSheet(defaultBtnStyle);
+            btn->setFocusPolicy(Qt::StrongFocus);
+
+            connect(btn, &QPushButton::clicked, this, [this, romPath] {
+                launchRom(romPath);
+            });
+
+            romLayout->addWidget(btn, 0, Qt::AlignHCenter);
+            subButtons_.append(btn);
+        }
+
+        romScrollWidget_->setLayout(romLayout);
+        romScrollArea_->setWidget(romScrollWidget_);
+        layout->addWidget(romScrollArea_, 1); // Take remaining space
+
+        // Back button
+        auto *backBtn = new QPushButton("Back to Main Menu");
+        backBtn->setFixedSize(1000, 100);
+        backBtn->setStyleSheet(defaultBtnStyle);
+        backBtn->setFocusPolicy(Qt::StrongFocus);
+
+        connect(backBtn, &QPushButton::clicked, this, [this]{
+            stack_->setCurrentIndex(0);
+            mode_ = MainMenu;
+            currentRow_ = 0;
+            currentCol_ = 0;
+            updateFocus();
+        });
+
+        layout->addWidget(backBtn, 0, Qt::AlignHCenter);
+        subButtons_.append(backBtn);
+
+        pages_.insert("Play", page);
+        stack_->addWidget(page);
+
+        stack_->setCurrentWidget(page);
+        subFocusIndex_ = 0;
+        mode_ = SubMenu;
+        updateSubFocus();
+    }
+
+
+    QStringList findRomFiles()
+    {
+        QStringList result;
+        QDir rootDir("/root/mgba_rom_files/");
+        QFileInfoList dirs = rootDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+        for (const QFileInfo &folder : dirs) {
+            QDir gameFolder(folder.absoluteFilePath());
+            QFileInfoList roms = gameFolder.entryInfoList(QStringList() << "*.gba", QDir::Files);
+            if (!roms.isEmpty()) {
+                result.append(roms.first().absoluteFilePath());
+            }
+        }
+
+        return result;
+    }
+
+    void launchRom(const QString &romPath)
+    {
+        if (isRaspberryPi()) {
+            ::execl("/usr/bin/mgba-qt", "mgba-qt", "-b", "/root/gba_bios.bin", romPath.toUtf8().constData(), static_cast<char*>(nullptr));
             QApplication::exit(1);
         } else {
             QApplication::quit();
         }
     }
+
 
     QStackedWidget *stack_ = nullptr;
     QVector<QPushButton*> buttons_;
