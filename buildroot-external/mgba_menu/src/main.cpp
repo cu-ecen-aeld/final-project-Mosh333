@@ -14,6 +14,7 @@
 #include <QFileInfo>
 #include <QScrollArea>
 #include <QSocketNotifier>
+#include <QProcess>
 #include <fcntl.h>
 #include <linux/input.h>
 #include <unistd.h>
@@ -264,7 +265,7 @@ private:
         fakeBtn->setFocusPolicy(Qt::StrongFocus);
 
         // Customized dummy handler
-        connect(fakeBtn, &QPushButton::clicked, this, [this, titleText] {
+        connect(fakeBtn, &QPushButton::clicked, this, [this, titleText, fakeBtn] {
             if (titleText == "Play") {
                 qDebug() << "[action] Play button clicked!";
                 // TODO: Launch Play menu
@@ -279,7 +280,17 @@ private:
             }
             else if (titleText == "Download") {
                 qDebug() << "[action] Download button clicked!";
-                // TODO: Launch Download Manager
+                fakeBtn->setText("Downloading...");
+                fakeBtn->setEnabled(false);
+
+                QProcess *proc = new QProcess(this);
+                connect(proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+                        this, [fakeBtn](int /*exitCode*/, QProcess::ExitStatus /*status*/) {
+                    fakeBtn->setText("Downloaded");
+                    fakeBtn->setEnabled(true);
+                });
+
+                proc->start("/root/download_roms.sh");
             }
             else if (titleText == "File Explorer") {
                 qDebug() << "[action] File Explorer button clicked!";
