@@ -65,6 +65,11 @@ private:
     enum MenuMode { MainMenu, SubMenu } mode_ = MainMenu;
     QScrollArea *romScrollArea_ = nullptr;
     QWidget *romScrollWidget_ = nullptr;
+    
+    QWidget* mainMenuWrapper_ = nullptr;  // Add this to keep a reference
+    QString currentBackground_; // New: empty = default light grey background Fusion Style: #f0f0f0 → RGB(240, 240, 240)
+    QScrollArea *bgScrollArea_ = nullptr;
+    QWidget *bgScrollWidget_ = nullptr;
 
     void openEvdevGamepad()
     {
@@ -193,9 +198,12 @@ private:
                 subButtons_[i]->setFocus(Qt::OtherFocusReason);
 
                 // --- NEW: Ensure button is visible inside scroll area ---
-                if (romScrollArea_) {
+                if (romScrollArea_ && romScrollArea_->isVisible()) {
                     romScrollArea_->ensureWidgetVisible(subButtons_[i]);
                 }
+                else if (bgScrollArea_ && bgScrollArea_->isVisible()) {
+                    bgScrollArea_->ensureWidgetVisible(subButtons_[i]);
+                }                
             }
             else {
                 subButtons_[i]->clearFocus();
@@ -236,7 +244,155 @@ private:
         v->addSpacing(300);
         v->addLayout(grid, 1);
         v->addStretch();
-        return page;
+        mainMenuWrapper_ = buildBackgroundWrapped(page, currentBackground_);
+        return mainMenuWrapper_;
+    }
+
+    QWidget* buildBackgroundWrapped(QWidget* innerContent, const QString& imagePath)
+    {
+        QWidget *wrapper = new QWidget;
+
+        if (!imagePath.isEmpty()) {
+            wrapper->setStyleSheet(QString(
+                "QWidget { "
+                "background-image: url(%1); "
+                "background-repeat: no-repeat; "
+                "background-position: center; "
+                "background-size: cover; "
+                "}").arg(imagePath));
+        }
+
+        QVBoxLayout *v = new QVBoxLayout(wrapper);
+        v->setContentsMargins(0, 0, 0, 0);
+        v->addWidget(innerContent);
+
+        return wrapper;
+    }
+
+    QStringList findBackgroundImages()
+    {
+        QDir bgDir("/root/background_image");
+        QStringList filters = { "*.jpg", "*.png", "*.jpeg" };
+        QFileInfoList files = bgDir.entryInfoList(filters, QDir::Files);
+        QStringList result;
+        for (const QFileInfo &file : files)
+            result << file.absoluteFilePath();
+        return result;
+    }
+
+    void showBackgroundSelector()
+    {
+        subButtons_.clear();
+
+        if (pages_.contains("Background")) {
+            QWidget *oldPage = pages_.take("Background");
+            stack_->removeWidget(oldPage);
+            oldPage->deleteLater();
+            // --- Reset broken references ---
+            bgScrollArea_ = nullptr;
+            bgScrollWidget_ = nullptr;
+        }
+
+        auto *page = new QWidget;
+        auto *layout = new QVBoxLayout(page);
+        layout->setContentsMargins(50, 50, 50, 50);
+        layout->setSpacing(20);
+
+        auto *title = new QLabel("Choose a Background");
+        title->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
+        title->setStyleSheet("font-size:48px;font-weight:bold;");
+        layout->addWidget(title);
+
+        bgScrollArea_ = new QScrollArea;
+        bgScrollArea_->setWidgetResizable(true);
+        bgScrollArea_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        bgScrollArea_->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+
+        bgScrollWidget_ = new QWidget;
+        QVBoxLayout *innerLayout = new QVBoxLayout(bgScrollWidget_);
+        innerLayout->setSpacing(10);
+
+        QStringList images = findBackgroundImages();
+        for (const QString &imgPath : images) {
+            QString displayName = QFileInfo(imgPath).fileName();
+            QPushButton *btn = new QPushButton(displayName);
+            btn->setFixedSize(1000, 100);
+            btn->setStyleSheet(defaultBtnStyle);
+            btn->setFocusPolicy(Qt::StrongFocus);
+
+            connect(btn, &QPushButton::clicked, this, [this, imgPath] {
+                currentBackground_ = imgPath;
+                qDebug() << "[background] Changed to:" << imgPath;
+
+                currentBackground_ = imgPath;
+                if (mainMenuWrapper_) {
+                    mainMenuWrapper_->setStyleSheet(QString(
+                        "QWidget { "
+                        "background-image: url(%1); "
+                        "background-repeat: no-repeat; "
+                        "background-position: center; "
+                        "background-size: cover; "
+                        "}").arg(currentBackground_));
+                }
+                stack_->setCurrentIndex(0);
+                mode_ = MainMenu;
+                currentRow_ = 0;
+                currentCol_ = 0;
+                updateFocus();
+
+            });
+
+            innerLayout->addWidget(btn, 0, Qt::AlignHCenter);
+            subButtons_.append(btn);
+        }
+
+        // Reset background button
+        QPushButton *resetBtn = new QPushButton("Reset to Default");
+        resetBtn->setFixedSize(1000, 100);
+        resetBtn->setStyleSheet(defaultBtnStyle);
+        resetBtn->setFocusPolicy(Qt::StrongFocus);
+        connect(resetBtn, &QPushButton::clicked, this, [this] {
+            currentBackground_.clear();
+            if (mainMenuWrapper_) {
+                mainMenuWrapper_->setStyleSheet("");  // Reset to default
+            }
+            stack_->setCurrentIndex(0);
+            mode_ = MainMenu;
+            currentRow_ = 0;
+            currentCol_ = 0;
+            updateFocus();
+            bgScrollArea_ = nullptr;
+            bgScrollWidget_ = nullptr;
+        });
+
+        innerLayout->addWidget(resetBtn, 0, Qt::AlignHCenter);
+        subButtons_.append(resetBtn);
+
+        bgScrollWidget_->setLayout(innerLayout);
+        bgScrollArea_->setWidget(bgScrollWidget_);
+        layout->addWidget(bgScrollArea_, 1);
+
+        QPushButton *backBtn = new QPushButton("Back to Main Menu");
+        backBtn->setFixedSize(1000, 100);
+        backBtn->setStyleSheet(defaultBtnStyle);
+        backBtn->setFocusPolicy(Qt::StrongFocus);
+        connect(backBtn, &QPushButton::clicked, this, [this] {
+            stack_->setCurrentIndex(0);
+            mode_ = MainMenu;
+            currentRow_ = 0;
+            currentCol_ = 0;
+            updateFocus();
+        });
+
+        layout->addWidget(backBtn, 0, Qt::AlignHCenter);
+        subButtons_.append(backBtn);
+
+        pages_.insert("Background", page);
+        stack_->addWidget(page);
+        stack_->setCurrentWidget(page);
+        subFocusIndex_ = 0;
+        mode_ = SubMenu;
+        updateSubFocus();
     }
 
     QWidget* pageFor(const QString &titleText)
@@ -362,7 +518,7 @@ private:
         case 4: stack_->setCurrentWidget(pageFor("File Explorer")); break;
         case 5: stack_->setCurrentWidget(pageFor("System")); break;
         case 6: stack_->setCurrentWidget(pageFor("Settings")); break;
-        case 7: stack_->setCurrentWidget(pageFor("Background")); break;
+        case 7: showBackgroundSelector(); break;
         case 8: stack_->setCurrentWidget(pageFor("Quit")); break;
         }
     }
@@ -444,6 +600,8 @@ private:
             currentRow_ = 0;
             currentCol_ = 0;
             updateFocus();
+            romScrollArea_ = nullptr;
+            romScrollWidget_ = nullptr;
         });
 
         layout->addWidget(backBtn, 0, Qt::AlignHCenter);
