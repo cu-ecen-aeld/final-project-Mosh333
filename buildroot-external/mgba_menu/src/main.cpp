@@ -19,6 +19,9 @@
 #include <linux/input.h>
 #include <unistd.h>
 #include <SDL2/SDL.h>
+#include <QImageReader>
+#include <QDebug>
+#include <QMessageBox>
 
 bool isRaspberryPi()
 {
@@ -32,6 +35,7 @@ class MenuWindow : public QWidget
 public:
     MenuWindow()
     {
+        setObjectName("MenuWindow");
         setWindowTitle("GBA UI Menu");
         setFixedSize(1920, 1080);
 
@@ -258,7 +262,6 @@ private:
                 "background-image: url(%1); "
                 "background-repeat: no-repeat; "
                 "background-position: center; "
-                "background-size: cover; "
                 "}").arg(imagePath));
         }
 
@@ -272,7 +275,7 @@ private:
     QStringList findBackgroundImages()
     {
         QDir bgDir("/root/background_image");
-        QStringList filters = { "*.jpg", "*.png", "*.jpeg" };
+        QStringList filters = { "*.bmp" };
         QFileInfoList files = bgDir.entryInfoList(filters, QDir::Files);
         QStringList result;
         for (const QFileInfo &file : files)
@@ -282,6 +285,9 @@ private:
 
     void showBackgroundSelector()
     {
+        // Add this line to check supported formats
+        qDebug() << "[Qt image formats]" << QImageReader::supportedImageFormats();
+
         subButtons_.clear();
 
         if (pages_.contains("Background")) {
@@ -326,12 +332,11 @@ private:
 
                 currentBackground_ = imgPath;
                 if (mainMenuWrapper_) {
-                    mainMenuWrapper_->setStyleSheet(QString(
-                        "QWidget { "
+                    stack_->setStyleSheet(QString(
+                        "QStackedWidget { "
                         "background-image: url(%1); "
                         "background-repeat: no-repeat; "
                         "background-position: center; "
-                        "background-size: cover; "
                         "}").arg(currentBackground_));
                 }
                 stack_->setCurrentIndex(0);
@@ -354,7 +359,7 @@ private:
         connect(resetBtn, &QPushButton::clicked, this, [this] {
             currentBackground_.clear();
             if (mainMenuWrapper_) {
-                mainMenuWrapper_->setStyleSheet("");  // Reset to default
+                stack_->setStyleSheet("");  // <-- Fix: Apply empty stylesheet to the stack_
             }
             stack_->setCurrentIndex(0);
             mode_ = MainMenu;
@@ -465,8 +470,13 @@ private:
                 // TODO: Set or Change Background
             }
             else if (titleText == "Quit") {
-                qDebug() << "[action] Quit button clicked!";
-                // TODO: Maybe confirm quitting?
+                qDebug() << "[action] Power Off button clicked!";
+                QMessageBox::StandardButton reply;
+                reply = QMessageBox::question(this, "Confirm Shutdown", "Are you sure you want to power off?",
+                                            QMessageBox::Yes | QMessageBox::No);
+                if (reply == QMessageBox::Yes) {
+                    QProcess::execute("poweroff");
+                }
             }
             else {
                 qDebug() << "[dummy] Unknown button clicked:" << titleText;
