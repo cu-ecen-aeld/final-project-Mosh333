@@ -9,6 +9,17 @@ See the [project wiki](https://github.com/cu-ecen-aeld/final-project-Mosh333/wik
 ## Schedule
 See the [project schedule dashboard](https://github.com/users/Mosh333/projects/1/views/1) and [project schedule wiki](https://github.com/cu-ecen-aeld/final-project-Mosh333/wiki/Final-Project-Schedule#project-backlog) for more details.
 
+## Demo
+https://drive.google.com/file/d/1D5Rqd_RAQGjuQG3ShQpCaAnRoBiaKwa9/view?usp=sharing
+
+## 🎮 Features
+
+- A gameboy advance console experience on the raspberry pi 3b+
+- Qt-based mgba game launcher with controller support
+- mGBA-Qt emulator integration with auto-ROM loading
+- Remote ROM download via internet
+- Dynamic background selector
+- Power-off system from menu
 
 ---
 
@@ -84,7 +95,7 @@ sdb      8:16   1  14.9G  0 disk
 Again, remove from VM (`Devices` -> `USB` and click the USB device) and unplug from Windows.
 
 6. Remove the sd card from the USB reader and plug it into the Raspberry Pi 3B+
-7. Turn on the Raspberry Pi 3B+ and the 8Bitdo Controller. First the first boot up, the system will restart once so make sure to turn on the controller back on.
+7. Turn on the Raspberry Pi 3B+ and the 8Bitdo Controller. On first boot, the system will restart once so make sure to turn on the controller back on.
 8. The final start up screen should look like 🎉:
 ![mgba_ui_menu](https://github.com/user-attachments/assets/f8998e2f-fdd0-423d-8191-e93cbf7af8c2)
 9. At the time of writing, `Play`, `Download`, `Background` and `Quit` features are implemented.
@@ -110,7 +121,7 @@ Some useful workflows that helped me complete this project.
 
 1. You can SSH into the Raspberry Pi (assuming it has ethernet connection to internet) using:
 ```
-ssh root@<pi_ip_addres>
+ssh root@<pi_ip_address>
 ```
 The password for `root` user is `root`. This can be configured via `make menuconfig`.
 
@@ -178,3 +189,9 @@ Please note the manually editted files may lose its configurations: `buildroot/o
 board/gba_emulator/overlay/mgba_rom_files/
 
 ```
+
+---
+
+## 💡 Final Thoughts
+
+This project demonstrates how Buildroot can be used to build a complete, minimal, and user-friendly embedded console experience from the ground up — including custom graphics, connectivity features, and a seamless game launch experience.
