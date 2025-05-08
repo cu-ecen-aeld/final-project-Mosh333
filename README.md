@@ -106,6 +106,8 @@ Again, remove from VM (`Devices` -> `USB` and click the USB device) and unplug f
 
 ## Some useful facts
 
+Some useful workflows that helped me complete this project.
+
 1. You can SSH into the Raspberry Pi (assuming it has ethernet connection to internet) using:
 ```
 ssh root@<pi_ip_addres>
@@ -158,4 +160,21 @@ then
 make linux-menuconfig
 ```
 then save&exit.
-Make a copy of this `linux.config` file in the `board/gba_emulator` dir for safe keeping.
+Make a copy of this `linux.config` file in the `board/gba_emulator` dir for safe keeping. Use this command:
+```
+cp output/build/linux-*/.config ../board/gba_emulator/linux.config
+```
+
+5. To force clean everything, one may perform:
+```
+make linux-dirclean
+make clean
+make
+```
+Please note the manually editted files may lose its configurations: `buildroot/output/target/etc/inittab` and `buildroot/output/images/rpi-firmware/config.txt` as mentioned in https://github.com/cu-ecen-aeld/final-project-Mosh333/blob/main/board/gba_emulator/inittab_readme and https://github.com/cu-ecen-aeld/final-project-Mosh333/blob/main/board/gba_emulator/config_readme.txt.
+
+6. To include additional GBA ROMs, store them in:
+```
+board/gba_emulator/overlay/mgba_rom_files/
+
+```
