@@ -105,13 +105,16 @@ Again, remove from VM (`Devices` -> `USB` and click the USB device) and unplug f
 11. After selecting a game, the `mgba-qt` program should launch automatically:
 ![1000011319](https://github.com/user-attachments/assets/a002754b-b100-41ce-9063-64aba1164646)
 
-12. The `Download` feature only downloads games specified in https://github.com/Mosh333/sample-roms/tree/refs/heads/master/remote_gba_repo. It may be modified in the [download_roms.sh script](https://github.com/cu-ecen-aeld/final-project-Mosh333/blob/main/board/gba_emulator/overlay/root/download_roms.sh).
-13. The `Background` feature allows users to modify the background wallpaper in the `mgba_menu`:
+12. `mgba-qt` `Settings` tab under `Tools` allows users to configure their controllers as well as keyboards:
+![1000011321](https://github.com/user-attachments/assets/7f5d001d-616b-4f4d-b341-819466059c54)
+
+13. The `Download` feature only downloads games specified in https://github.com/Mosh333/sample-roms/tree/refs/heads/master/remote_gba_repo. It may be modified in the [download_roms.sh script](https://github.com/cu-ecen-aeld/final-project-Mosh333/blob/main/board/gba_emulator/overlay/root/download_roms.sh).
+14. The `Background` feature allows users to modify the background wallpaper in the `mgba_menu`:
 ![1000011299](https://github.com/user-attachments/assets/76e72d75-3b71-4d35-a59a-1401f0a1dec9)
 ![1000011298](https://github.com/user-attachments/assets/fa094f8e-b3ab-4671-9eb2-fc21f823f530)
 ![1000011297](https://github.com/user-attachments/assets/59cee4a2-da37-4d3b-acbf-5a3461814a91)
 
-14. The `Quit` feature allows users to power off the Raspberry Pi.
+15. The `Quit` feature allows users to power off the Raspberry Pi.
 
 ---
 
