@@ -124,7 +124,7 @@ Some useful workflows that helped me complete this project.
 
 1. You can SSH into the Raspberry Pi (assuming it has ethernet connection to internet) using:
 ```
-ssh root@`<pi-ip-address>`
+ssh root@{pi-ip-address}
 ```
 The password for `root` user is `root`. This can be configured via `make menuconfig`.
 
